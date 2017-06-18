@@ -130,7 +130,7 @@ class ExportDAE(bpy.types.Operator, ExportHelper):
         description="Export shape keys for selected objects.",
         default=False,
         )
-		
+
     anim_optimize_precision = FloatProperty(
         name="Precision",
         description=("Tolerence for comparing double keyframes "
@@ -144,6 +144,12 @@ class ExportDAE(bpy.types.Operator, ExportHelper):
         name="Use Metadata",
         default=True,
         options={"HIDDEN"},
+        )
+
+    use_flip_yz = BoolProperty(
+        name="Flip YZ",
+        description=("Flip YZ Vertex and Matix."),
+        default=False
         )
 
     @property

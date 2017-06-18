@@ -58,7 +58,21 @@ def snap_tup(tup):
     return tup
 
 
-def strmtx(mtx):
+def strmtx(_mtx, flip_yz=False):
+
+    # MizunagiKB
+    mtx = []
+    for x in range(4):
+        mtx.append([0.0] * 4)
+        for y in range(4):
+            mtx[x][y] = _mtx[x][y]
+
+    if flip_yz:
+        y = mtx[1][3]
+
+        mtx[1][3] = mtx[2][3] * -1
+        mtx[2][3] = y
+
     s = ""
     for x in range(4):
         for y in range(4):
@@ -660,9 +674,16 @@ class DaeExporter:
         # Vertex Array
         self.writel(S_GEOM, 3, "<source id=\"{}-positions\">".format(meshid))
         float_values = ""
+
+        flip_yz = self.config["use_flip_yz"]
         for v in vertices:
-            float_values += " {} {} {}".format(
-                v.vertex.x, v.vertex.y, v.vertex.z)
+            # MizunagiKB
+            if flip_yz:
+                float_values += " {} {} {}".format(
+                    v.vertex.x, v.vertex.z * -1, v.vertex.y)
+            else:
+                float_values += " {} {} {}".format(
+                    v.vertex.x, v.vertex.y, v.vertex.z)
         self.writel(
             S_GEOM, 4, "<float_array id=\"{}-positions-array\" "
             "count=\"{}\">{}</float_array>".format(
@@ -682,8 +703,13 @@ class DaeExporter:
         self.writel(S_GEOM, 3, "<source id=\"{}-normals\">".format(meshid))
         float_values = ""
         for v in vertices:
-            float_values += " {} {} {}".format(
-                v.normal.x, v.normal.y, v.normal.z)
+            # MizunagiKB
+            if flip_yz:
+                float_values += " {} {} {}".format(
+                    v.normal.x, v.normal.z * -1, v.normal.y)
+            else:
+                float_values += " {} {} {}".format(
+                    v.normal.x, v.normal.y, v.normal.z)
         self.writel(
             S_GEOM, 4, "<float_array id=\"{}-normals-array\" "
             "count=\"{}\">{}</float_array>".format(
@@ -704,8 +730,13 @@ class DaeExporter:
                 S_GEOM, 3, "<source id=\"{}-tangents\">".format(meshid))
             float_values = ""
             for v in vertices:
-                float_values += " {} {} {}".format(
-                    v.tangent.x, v.tangent.y, v.tangent.z)
+                # MizunagiKB
+                if flip_yz:
+                    float_values += " {} {} {}".format(
+                        v.tangent.x, v.tangent.z * -1, v.tangent.y)
+                else:
+                    float_values += " {} {} {}".format(
+                        v.tangent.x, v.tangent.y, v.tangent.z)
             self.writel(
                 S_GEOM, 4, "<float_array id=\"{}-tangents-array\" "
                 "count=\"{}\">{}</float_array>".format(
@@ -725,8 +756,13 @@ class DaeExporter:
                 meshid))
             float_values = ""
             for v in vertices:
-                float_values += " {} {} {}".format(
-                    v.bitangent.x, v.bitangent.y, v.bitangent.z)
+                # MizunagiKB
+                if flip_yz:
+                    float_values += " {} {} {}".format(
+                        v.bitangent.x, v.bitangent.z * -1, v.bitangent.y)
+                else:
+                    float_values += " {} {} {}".format(
+                        v.bitangent.x, v.bitangent.y, v.bitangent.z)
             self.writel(
                 S_GEOM, 4, "<float_array id=\"{}-bitangents-array\" "
                 "count=\"{}\">{}</float_array>".format(
@@ -885,7 +921,7 @@ class DaeExporter:
 
             self.writel(
                 S_SKIN, 3, "<bind_shape_matrix>{}</bind_shape_matrix>".format(
-                    strmtx(node.matrix_world)))
+                    strmtx(node.matrix_world, flip_yz)))
             # Joint Names
             self.writel(S_SKIN, 3, "<source id=\"{}-joints\">".format(contid))
             name_values = ""
@@ -910,7 +946,7 @@ class DaeExporter:
                 contid))
             pose_values = ""
             for v in si["bone_bind_poses"]:
-                pose_values += " {}".format(strmtx(v))
+                pose_values += " {}".format(strmtx(v, flip_yz))
 
             self.writel(
                 S_SKIN, 4, "<float_array id=\"{}-bind_poses-array\" "
@@ -1066,6 +1102,8 @@ class DaeExporter:
             self.writel(S_NODES, il, "</instance_geometry>")
 
     def export_armature_bone(self, bone, il, si):
+        flip_yz = self.config["use_flip_yz"]
+
         is_ctrl_bone = (
             self.config["use_exclude_ctrl_bones"] and
             (bone.name.startswith("ctrl") or bone.use_deform == False))
@@ -1111,7 +1149,7 @@ class DaeExporter:
         if (is_ctrl_bone is False):
             self.writel(
                 S_NODES, il, "<matrix sid=\"transform\">{}</matrix>".format(
-                    strmtx(xform)))
+                    strmtx(xform, flip_yz)))
 
         for c in bone.children:
             self.export_armature_bone(c, il, si)
@@ -1424,6 +1462,8 @@ class DaeExporter:
         self.writel(S_NODES, il, "</instance_geometry>")
 
     def export_node(self, node, il):
+        flip_yz = self.config["use_flip_yz"]
+
         if (node not in self.valid_nodes):
             return
 
@@ -1437,7 +1477,7 @@ class DaeExporter:
 
         self.writel(
             S_NODES, il, "<matrix sid=\"transform\">{}</matrix>".format(
-                strmtx(node.matrix_local)))
+                strmtx(node.matrix_local, flip_yz)))
         if (node.type == "MESH"):
             self.export_mesh_node(node, il)
         elif (node.type == "CURVE"):
@@ -1527,7 +1567,7 @@ class DaeExporter:
         for k in keys:
             source_frames += " {}".format(k[0])
             if (matrices):
-                source_transforms += " {}".format(strmtx(k[1]))
+                source_transforms += " {}".format(strmtx(k[1]), flip_yz)
             else:
                 source_transforms += " {}".format(k[1])
 

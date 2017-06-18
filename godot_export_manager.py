@@ -118,6 +118,7 @@ class godot_export_manager(bpy.types.Panel):
             col.prop(group, "use_anim_optimize")
             col.prop(group, "anim_optimize_precision")
             col.prop(group, "use_metadata")
+            col.prop(group, "use_flip_yz")
 
 
 class UI_List_Godot(bpy.types.UIList):
@@ -383,7 +384,8 @@ class export_group(bpy.types.Operator):
                 use_anim_optimize=group[self.idx].use_anim_optimize,
                 anim_optimize_precision=group[
                     self.idx].anim_optimize_precision,
-                use_metadata=group[self.idx].use_metadata)
+                use_metadata=group[self.idx].use_metadata,
+                use_flip_yz=group[self.idx].use_flip_yz)
 
             self.report({"INFO"},
                         "\"{}\" Group exported.".format(group[self.idx].name))
@@ -517,6 +519,11 @@ class godot_export_groups(bpy.types.PropertyGroup):
 
     use_metadata = BoolProperty(name="Use Metadata", default=True,
                                 options={"HIDDEN"})
+
+    use_flip_yz = BoolProperty(name="Flip YZ",
+                               description="Flip YZ Vertex and Matix.",
+                               default=False)
+
     use_include_particle_duplicates = BoolProperty(
         name="Include Particle Duplicates", default=True)
 
